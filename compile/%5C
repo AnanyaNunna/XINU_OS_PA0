@@ -1,0 +1,17 @@
+#include<stdio.h>
+
+int mycall()
+{
+        printf("\n\nHey BRO!!\n");
+	int passed_value = 0xaabbccdd;
+	//int passed_value1 = 0xffffffff;
+        int clear_bit = 0xfffc01ff;
+	//int rotate = 0b1000;
+        int clear_firste = 0xff000000;
+	int assem;
+        asm("and %%ebx, %%eax;" : "=a" (assem) : "a"(passed_value) , "b"(clear_bit));
+	asm("shr $8, %%eax;" : "=a" (assem) : "a"(assem));
+	asm("or %%ebx, %%eax;" : "=a" (assem) : "a"(assem) , "b"(clear_firste));
+        printf("the result is: %x\n", assem);
+        return 0;
+}

@@ -1,0 +1,58 @@
+
+1) Assuming the XINU text begins at address 0x0, draw a rough diagram of XINU's memory layout with addresses derived from your experimental measurements. Include the information you uncovered from running your version of printsegaddress() and printprocstks().
+
+= The illustration shown below is the rough representation of the memory in XINU.
+	Some of the observations are:
+	- The stack is divided into segments to accomodate each function call.
+	- When a function(caller) calls another function(callee), then the function arguments are first pushed into the stack
+	  by the caller and then the return address is pushed into the stack by the caller. Then the callee pushes the base pointer inorder to
+	  retrieve it before the callee returns.
+	- The NULL process is also allocated space in the stack. From my observation, it has a base pointer of 0x00fffffc and it's limit was 0x00fff000,
+	  giving it almost 4096bytes, just like any other function though its length is 0.
+	- The etext is the address immediately next to the end of text/code segment, the edata is the address immediately next to the initialized data segment and end is the address next to the end of bss segment.
+	- From my observation, the stack grows down(from higher to lower address) and heap grows up(lower to higher address).
+|      		     | 
+|________________|__ base pointer (stack base)= 0x00ffeff8
+|    	 |       |
+|    	 |       |-->stack pointer = 0x00ffef90
+|      Stack	 |
+|    	 |       stack size =  (4096)
+|    	 v       | 
+|________________|__ stack limit = 0x00ffdffc
+|    	 ^	     |
+|    	 |       |
+|       Heap	 |
+|    	 |       |
+|________|_______|-> ebss = 0x00025d78
+|    	         |
+|  uninitialized |
+|      data	 	 |
+|     (bss)	     |
+|________________|-> edata = 0x0001e75d
+|  Data	space    |
+|    (edata)     |
+|________________|-> etext = 0x0001984d
+|  Text space    |
+|    (etext)     |
+|________________|->Start = 0x00000000
+
+
+2)What is the difference in stack top address before and after calling printtos()? Draw a diagram to illustrate what are the contents of the items pushed into the stack between these two time points.
+
+= When the main function calls the printtos() function, it first pushes function arguments(if any), in our case it is not present and also it pushes the return address. Then after entering the printtos() function, it pushes the ebp(base pointer) into the stack as the main function is not expecting the callee to change the ebp. So by pushing it inside the stack, the printtos() function can retrieve it before returning to main. Therefore, in our case, the return address and base pointer is being pushed, due to which the top of the stack pointer will have a difference of 2 memory locations.
+  opcode PUSH first moves(decrement in our scenario) the esp and then pushes the values.
+
+| main's local   |
+|    variables   |-> esp = 0x00ffefc0(before calling printtos())
+|________________|
+|  main's return |
+|       address  |
+|________________|
+|  base pointer  |
+|    		     |-> esp = 0x00ffefa0(after entering printtos())
+|________________|
+|				 |
+
+3)In a stack frame, local variables are stored below the top of the stack. In task 3, does your result show all the local variables declared in your printtos function? If not, can you explain that? (hint: try to disable the compiler optimization by specifing -O0 in your Makefile)
+
+= The local variables are pushed into the stack only if they are initialized and used in the code. Unintialized variables are not pushed in the stack due to compiler optimization. To turn this feature off, we can include the -O0 command in the Makefile and compile. This will disable the compiler optimization and store all the local variables irrespective of their initialization.
